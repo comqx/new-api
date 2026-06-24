@@ -480,6 +480,7 @@ export const getLogsColumns = ({
   copyText,
   showUserInfoFunc,
   openChannelAffinityUsageCacheModal,
+  openRequestAuditModal,
   isAdminUser,
   billingDisplayMode = 'price',
 }) => {
@@ -896,6 +897,37 @@ export const getLogsColumns = ({
           }
         }
         return isAdminUser ? <div>{content}</div> : <></>;
+      },
+    },
+    {
+      key: COLUMN_KEYS.REQUEST_AUDIT,
+      title: t('请求'),
+      dataIndex: 'request_audit',
+      render: (text, record, index) => {
+        const displayable =
+          record.type === 0 ||
+          record.type === 2 ||
+          record.type === 5 ||
+          record.type === 6;
+        if (!displayable || !record.request_id) {
+          return <Typography.Text type='tertiary'>—</Typography.Text>;
+        }
+        return (
+          <Tooltip content={t('查看存储的请求体和请求头')}>
+            <Tag
+              color='blue'
+              shape='circle'
+              type='light'
+              style={{ cursor: 'pointer' }}
+              onClick={(event) => {
+                event.stopPropagation();
+                openRequestAuditModal?.(record.request_id);
+              }}
+            >
+              {t('查看')}
+            </Tag>
+          </Tooltip>
+        );
       },
     },
     {

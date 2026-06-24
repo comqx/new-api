@@ -8,9 +8,29 @@ DEV_POSTGRES_SERVICE = postgres
 DEV_BACKEND_SERVICE = new-api
 DEV_POSTGRES_DB = new-api
 DEV_POSTGRES_USER = root
+DEV_POSTGRES_HOST ?= 127.0.0.1
+DEV_POSTGRES_PORT ?= 5432
+DEV_POSTGRES_PASSWORD ?= 123456
 DEV_SQLITE_PATH ?= one-api.db
 
-.PHONY: all build-frontend build-frontend-classic build-all-frontends start-backend dev dev-api dev-api-rebuild dev-web dev-web-classic reset-setup
+DEV_EMBED_STUB = '<!doctype html><html><head><title>dev</title></head><body>use frontend dev server</body></html>'
+
+.PHONY: all build-frontend build-frontend-classic build-all-frontends prepare-embed-stubs dev-backend start-backend dev dev-api dev-api-rebuild dev-web dev-web-classic reset-setup
+
+prepare-embed-stubs:
+	@mkdir -p $(FRONTEND_DIR)/dist $(FRONTEND_CLASSIC_DIR)/dist
+	@if [ ! -f $(FRONTEND_DIR)/dist/index.html ]; then \
+		printf '%s\n' $(DEV_EMBED_STUB) > $(FRONTEND_DIR)/dist/index.html; \
+		echo "Created $(FRONTEND_DIR)/dist/index.html (embed stub for go run)"; \
+	fi
+	@if [ ! -f $(FRONTEND_CLASSIC_DIR)/dist/index.html ]; then \
+		printf '%s\n' $(DEV_EMBED_STUB) > $(FRONTEND_CLASSIC_DIR)/dist/index.html; \
+		echo "Created $(FRONTEND_CLASSIC_DIR)/dist/index.html (embed stub for go run)"; \
+	fi
+
+dev-backend: prepare-embed-stubs
+	@echo "Starting backend dev server (foreground)..."
+	@cd $(BACKEND_DIR) && go run main.go
 
 all: build-all-frontends start-backend
 
@@ -26,7 +46,7 @@ build-frontend-classic:
 
 build-all-frontends: build-frontend build-frontend-classic
 
-start-backend:
+start-backend: prepare-embed-stubs
 	@echo "Starting backend dev server..."
 	@cd $(BACKEND_DIR) && go run main.go &
 
@@ -82,6 +102,18 @@ reset-setup:
 			-c "DELETE FROM options WHERE key IN ('SelfUseModeEnabled', 'DemoSiteEnabled');"; \
 		echo "Restarting docker dev backend so setup status is recalculated..."; \
 		docker compose -f $(DEV_COMPOSE_FILE) restart $(DEV_BACKEND_SERVICE); \
+	elif command -v psql >/dev/null 2>&1; then \
+		echo "Detected local PostgreSQL at $(DEV_POSTGRES_HOST):$(DEV_POSTGRES_PORT). Removing setup record and root users..."; \
+		PGPASSWORD=$(DEV_POSTGRES_PASSWORD) psql -h $(DEV_POSTGRES_HOST) -p $(DEV_POSTGRES_PORT) -U $(DEV_POSTGRES_USER) -d $(DEV_POSTGRES_DB) \
+			-c 'DELETE FROM setups;' \
+			-c 'DELETE FROM users WHERE role = 100;' \
+			-c "DELETE FROM options WHERE key IN ('SelfUseModeEnabled', 'DemoSiteEnabled');"; \
+		if docker compose -f $(DEV_COMPOSE_FILE) ps --services --status running | grep -qx "$(DEV_BACKEND_SERVICE)"; then \
+			echo "Restarting docker dev backend so setup status is recalculated..."; \
+			docker compose -f $(DEV_COMPOSE_FILE) restart $(DEV_BACKEND_SERVICE); \
+		else \
+			echo "Restart the local backend process before testing the setup wizard."; \
+		fi; \
 	elif db_path="$${SQLITE_PATH:-$(DEV_SQLITE_PATH)}"; db_path="$${db_path%%\?*}"; [ -f "$$db_path" ]; then \
 		db_path="$${SQLITE_PATH:-$(DEV_SQLITE_PATH)}"; \
 		db_path="$${db_path%%\?*}"; \
@@ -90,7 +122,7 @@ reset-setup:
 			"DELETE FROM setups; DELETE FROM users WHERE role = 100; DELETE FROM options WHERE key IN ('SelfUseModeEnabled', 'DemoSiteEnabled');"; \
 		echo "SQLite setup state reset. Restart the local backend process before testing the setup wizard."; \
 	else \
-		echo "No running docker dev PostgreSQL or local SQLite database found."; \
-		echo "Start the dev stack with 'make dev-api', or set SQLITE_PATH/DEV_SQLITE_PATH to your local SQLite database."; \
+		echo "No running docker dev PostgreSQL, local PostgreSQL (psql), or local SQLite database found."; \
+		echo "Start the dev stack with 'make dev-api', install psql for host PostgreSQL, or set SQLITE_PATH/DEV_SQLITE_PATH."; \
 		exit 1; \
 	fi

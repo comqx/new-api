@@ -380,3 +380,22 @@ export interface UserInfo {
   aff_quota?: number
   remark?: string
 }
+
+export interface RelayAuditRecord {
+  id: number
+  request_id: string
+  user_id: number
+  username?: string
+  token_id?: number
+  token_name?: string
+  model_name?: string
+  method?: string
+  path?: string
+  client_ip?: string
+  content_type?: string
+  headers?: string
+  body?: string
+  body_size?: number
+  truncated?: boolean
+  created_at?: number
+}

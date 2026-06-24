@@ -1,0 +1,14 @@
+diff --git a/router/api-router.go b/router/api-router.go
+index 7fac06f4f..cf2a9575b 100644
+--- a/router/api-router.go
++++ b/router/api-router.go
+@@ -411,6 +411,10 @@ func SetApiRouter(router *gin.Engine) {
+ 			deploymentsRoute.POST("/:id/extend", controller.ExtendDeployment)
+ 			deploymentsRoute.DELETE("/:id", controller.DeleteDeployment)
+ 		}
++
++		// FORK:BEGIN requestaudit
++		RegisterAPIForkRoutes(apiRouter)
++		// FORK:END requestaudit
+ 	}
+ }
