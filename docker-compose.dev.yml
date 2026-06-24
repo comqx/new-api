@@ -1,5 +1,8 @@
 # Frontend Development - Backend built from local source
 #
+# 使用宿主机 PostgreSQL / Redis（127.0.0.1），不启动 compose 内的 pg/redis。
+# 连接信息见项目根目录 .env；容器内通过 host.docker.internal 访问宿主机。
+#
 # Usage:
 #   1. docker compose -f docker-compose.dev.yml up -d
 #   2. cd web && bun install && bun run dev
@@ -11,8 +14,8 @@
 # Stop:
 #   docker compose -f docker-compose.dev.yml down
 #
-# Reset data:
-#   docker compose -f docker-compose.dev.yml down -v
+# Reset data (宿主机 PG):
+#   make reset-setup
 
 services:
   new-api:
@@ -26,48 +29,13 @@ services:
       - "3000:3000"
     volumes:
       - dev_data:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
-      - SQL_DSN=postgresql://root:123456@postgres:5432/new-api
-      - REDIS_CONN_STRING=redis://redis
+      - SQL_DSN=postgresql://root:123456@host.docker.internal:5432/new-api
+      - REDIS_CONN_STRING=redis://:123@host.docker.internal:6379
       - TZ=Asia/Shanghai
       - BATCH_UPDATE_ENABLED=true
-    depends_on:
-      redis:
-        condition: service_started
-      postgres:
-        condition: service_healthy
-    networks:
-      - dev-network
-
-  redis:
-    image: redis:7-alpine
-    container_name: new-api-dev-redis
-    restart: unless-stopped
-    networks:
-      - dev-network
-
-  postgres:
-    image: postgres:15-alpine
-    container_name: new-api-dev-pg
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: 123456
-      POSTGRES_DB: new-api
-    volumes:
-      - dev_pg_data:/var/lib/postgresql/data
-    networks:
-      - dev-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U root -d new-api"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
 
 volumes:
   dev_data:
-  dev_pg_data:
-
-networks:
-  dev-network:
-    driver: bridge

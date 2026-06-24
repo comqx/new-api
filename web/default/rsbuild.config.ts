@@ -59,6 +59,13 @@ export default defineConfig(({ envMode }) => {
       alias: {
         '@': path.resolve(__dirname, './src'),
       },
+      // Keep a single VRender/VChart runtime; duplicate copies break createCanvas().
+      dedupe: [
+        '@visactor/vchart',
+        '@visactor/react-vchart',
+        '@visactor/vrender-core',
+        '@visactor/vrender-kits',
+      ],
     },
     html: {
       template: './index.html',

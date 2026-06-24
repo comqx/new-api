@@ -3826,6 +3826,15 @@
     "并确认自行承担部署": "confirm that I bear legal responsibility arising from deployment",
     "运营和收费行为产生的法律责任": "operation and charging behavior",
     "，": ", ",
-    "、": ", "
+    "、": ", ",
+    "请求": "Request",
+    "查看存储的请求体和请求头": "View stored request body and headers",
+    "请求内容": "Request Content",
+    "查看该请求存储的请求体和请求头。图片和音频内容已省略；敏感请求头不会被存储。": "View the stored request body and headers for this request. Image and audio content is omitted; secret headers are not stored.",
+    "请求体": "Request Body",
+    "请求头": "Request Headers",
+    "内容已截断至配置的最大大小。": "Content was truncated to the configured maximum size.",
+    "暂无请求内容": "No request content available",
+    "获取请求内容失败": "Failed to fetch request content"
   }
 }

@@ -61,6 +61,7 @@ export const useLogsData = () => {
     COST: 'cost',
     RETRY: 'retry',
     IP: 'ip',
+    REQUEST_AUDIT: 'request_audit',
     DETAILS: 'details',
   };
 
@@ -124,6 +125,7 @@ export const useLogsData = () => {
       [COLUMN_KEYS.COST]: true,
       [COLUMN_KEYS.RETRY]: isAdminUser,
       [COLUMN_KEYS.IP]: true,
+      [COLUMN_KEYS.REQUEST_AUDIT]: true,
       [COLUMN_KEYS.DETAILS]: true,
     };
   };
@@ -186,6 +188,11 @@ export const useLogsData = () => {
     useState(null);
   const [showParamOverrideModal, setShowParamOverrideModal] = useState(false);
   const [paramOverrideTarget, setParamOverrideTarget] = useState(null);
+
+  // Request audit (stored request body/headers) modal state (admin only)
+  const [showRequestAuditModal, setShowRequestAuditModal] = useState(false);
+  const [requestAuditRecord, setRequestAuditRecord] = useState(null);
+  const [requestAuditLoading, setRequestAuditLoading] = useState(false);
 
   // Initialize default column visibility
   const initDefaultColumns = () => {
@@ -362,6 +369,33 @@ export const useLogsData = () => {
       requestPath: other?.request_path || '',
     });
     setShowParamOverrideModal(true);
+  };
+
+  // Open the request audit modal and fetch the stored request body/headers.
+  // Admins query the full endpoint; regular users only their own (self) records.
+  const openRequestAuditModal = async (requestId) => {
+    if (!requestId) {
+      return;
+    }
+    setRequestAuditRecord(null);
+    setRequestAuditLoading(true);
+    setShowRequestAuditModal(true);
+    try {
+      const url = isAdminUser
+        ? `/api/relay_audit/${requestId}`
+        : `/api/relay_audit/self/${requestId}`;
+      const res = await API.get(url);
+      const { success, message, data } = res.data;
+      if (success) {
+        setRequestAuditRecord(data || null);
+      } else {
+        showError(message || t('获取请求内容失败'));
+      }
+    } catch (e) {
+      showError(t('获取请求内容失败'));
+    } finally {
+      setRequestAuditLoading(false);
+    }
   };
 
   // Format logs data
@@ -881,6 +915,13 @@ export const useLogsData = () => {
     showParamOverrideModal,
     setShowParamOverrideModal,
     paramOverrideTarget,
+
+    // Request audit modal
+    showRequestAuditModal,
+    setShowRequestAuditModal,
+    requestAuditRecord,
+    requestAuditLoading,
+    openRequestAuditModal,
 
     // Functions
     loadLogs,

@@ -16,23 +16,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useEffect, useState } from 'react'
-import { ThemeManager } from '@visactor/vchart'
-import { useTheme } from '@/context/theme-provider'
+import { registerBrowserEnv } from '@visactor/vchart'
 
 /**
- * Switch VChart's global theme to follow the resolved app theme (light / dark).
- * Returns flags consumers can use to defer chart rendering until the theme is ready.
+ * Register VRender browser env contributions before any chart mounts.
+ * Without this, lazy-loaded chart chunks can hit
+ * "Cannot read properties of undefined (reading 'createCanvas')".
  */
-export function useChartTheme() {
-  const { resolvedTheme } = useTheme()
-  const [themeReady, setThemeReady] = useState(false)
-
-  useEffect(() => {
-    setThemeReady(false)
-    ThemeManager.setCurrentTheme(resolvedTheme === 'dark' ? 'dark' : 'light')
-    setThemeReady(true)
-  }, [resolvedTheme])
-
-  return { resolvedTheme, themeReady }
+export function initVChartEnv() {
+  if (typeof document === 'undefined') return
+  registerBrowserEnv()
 }
+
+initVChartEnv()

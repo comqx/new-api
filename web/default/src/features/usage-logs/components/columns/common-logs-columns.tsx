@@ -61,6 +61,7 @@ import {
 } from '../../lib/utils'
 import type { LogOtherData } from '../../types'
 import { DetailsDialog } from '../dialogs/details-dialog'
+import { RequestAuditDialog } from '../dialogs/request-audit-dialog'
 import { ModelBadge } from '../model-badge'
 import { useUsageLogsContext } from '../usage-logs-provider'
 
@@ -522,6 +523,37 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
       }
     )
   }
+
+  columns.push({
+    id: 'request_audit',
+    header: t('Request'),
+    cell: function RequestAuditCell({ row }) {
+      const [auditOpen, setAuditOpen] = useState(false)
+      const log = row.original
+      if (!isDisplayableLogType(log.type) || !log.request_id) {
+        return <span className='text-muted-foreground/40'>—</span>
+      }
+      return (
+        <>
+          <button
+            type='button'
+            className='text-primary text-xs hover:underline'
+            onClick={() => setAuditOpen(true)}
+            title={t('View stored request body and headers')}
+          >
+            {t('View')}
+          </button>
+          <RequestAuditDialog
+            requestId={log.request_id}
+            open={auditOpen}
+            onOpenChange={setAuditOpen}
+            isAdmin={isAdmin}
+          />
+        </>
+      )
+    },
+    size: 80,
+  })
 
   columns.push({
     accessorKey: 'token_name',

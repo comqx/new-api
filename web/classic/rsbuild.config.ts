@@ -1,4 +1,5 @@
 import path from 'path'
+import fs from 'fs'
 import { createRequire } from 'module'
 import { fileURLToPath } from 'url'
 import { defineConfig, loadEnv } from '@rsbuild/core'
@@ -10,6 +11,24 @@ const semiUiDir = path.resolve(
   path.dirname(require.resolve('@douyinfe/semi-ui')),
   '../..',
 )
+
+/** Classic uses VChart 1.8.x; default workspace hoists VChart 2.x @visactor packages. */
+function classicVisactorAliases(): Record<string, string> {
+  const aliases: Record<string, string> = {}
+  try {
+    const vchartPkg = require.resolve('@visactor/vchart/package.json', {
+      paths: [__dirname],
+    })
+    const nestedDir = path.join(path.dirname(vchartPkg), 'node_modules/@visactor')
+    if (!fs.existsSync(nestedDir)) return aliases
+    for (const name of fs.readdirSync(nestedDir)) {
+      aliases[`@visactor/${name}`] = path.join(nestedDir, name)
+    }
+  } catch {
+    /* classic deps missing during tooling */
+  }
+  return aliases
+}
 
 export default defineConfig(({ envMode }) => {
   const env = loadEnv({ mode: envMode, prefixes: ['VITE_'] })
@@ -47,6 +66,7 @@ export default defineConfig(({ envMode }) => {
           semiUiDir,
           'dist/css/semi.css',
         ),
+        ...classicVisactorAliases(),
       },
     },
     html: {

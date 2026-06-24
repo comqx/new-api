@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023-2026 QuantumNous
+Copyright (C) 2025 QuantumNous
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -16,23 +16,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useEffect, useState } from 'react'
-import { ThemeManager } from '@visactor/vchart'
-import { useTheme } from '@/context/theme-provider'
+import { registerBrowserEnv } from '@visactor/vchart';
 
-/**
- * Switch VChart's global theme to follow the resolved app theme (light / dark).
- * Returns flags consumers can use to defer chart rendering until the theme is ready.
- */
-export function useChartTheme() {
-  const { resolvedTheme } = useTheme()
-  const [themeReady, setThemeReady] = useState(false)
+let initialized = false;
 
-  useEffect(() => {
-    setThemeReady(false)
-    ThemeManager.setCurrentTheme(resolvedTheme === 'dark' ? 'dark' : 'light')
-    setThemeReady(true)
-  }, [resolvedTheme])
-
-  return { resolvedTheme, themeReady }
+/** Must run in the same bundle as VChart before any chart mounts. */
+export function ensureVChartEnv() {
+  if (initialized || typeof document === 'undefined') return;
+  registerBrowserEnv();
+  initialized = true;
 }
+
+ensureVChartEnv();

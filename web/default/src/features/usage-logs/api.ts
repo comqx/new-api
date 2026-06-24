@@ -25,6 +25,7 @@ import type {
   GetLogStatsResponse,
   GetMidjourneyLogsParams,
   GetTaskLogsParams,
+  RelayAuditRecord,
   UserInfo,
 } from './types'
 
@@ -87,6 +88,21 @@ export async function getUserInfo(
   userId: number
 ): Promise<{ success: boolean; message?: string; data?: UserInfo }> {
   const res = await api.get(`/api/user/${userId}`)
+  return res.data
+}
+
+export async function getRelayAuditRecord(
+  requestId: string,
+  isAdmin = true
+): Promise<{
+  success: boolean
+  message?: string
+  data?: RelayAuditRecord
+}> {
+  const path = isAdmin
+    ? `/api/relay_audit/${requestId}`
+    : `/api/relay_audit/self/${requestId}`
+  const res = await api.get(path)
   return res.data
 }
 
