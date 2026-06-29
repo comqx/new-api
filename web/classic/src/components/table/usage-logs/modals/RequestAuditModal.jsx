@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Modal,
   Button,
@@ -26,24 +26,15 @@ import {
   Banner,
   Typography,
   JsonViewer,
+  RadioGroup,
+  Radio,
 } from '@douyinfe/semi-ui';
 import { IconCopy } from '@douyinfe/semi-icons';
 import { copy, showError, showSuccess } from '../../../../helpers';
+import StructuredRequestBody from './StructuredRequestBody';
+import { formatJson, isChatRequestBody } from './parseChatRequestBody';
 
 const { Text } = Typography;
-
-// formatJson 尝试将原始字符串格式化为缩进 JSON，并返回是否为合法 JSON。
-// 合法时用 JsonViewer 着色折叠展示，否则回退为纯文本。
-const formatJson = (raw) => {
-  if (!raw) {
-    return { text: '', isJson: false };
-  }
-  try {
-    return { text: JSON.stringify(JSON.parse(raw), null, 2), isJson: true };
-  } catch (e) {
-    return { text: raw, isJson: false };
-  }
-};
 
 const jsonViewerOptions = {
   readOnly: true,
@@ -70,6 +61,14 @@ const RequestAuditModal = ({
 }) => {
   const body = formatJson(requestAuditRecord?.body);
   const headers = formatJson(requestAuditRecord?.headers);
+  const canStructureBody = body.isJson && isChatRequestBody(body.data);
+  const [bodyViewMode, setBodyViewMode] = useState('structured');
+
+  useEffect(() => {
+    if (showRequestAuditModal) {
+      setBodyViewMode('structured');
+    }
+  }, [showRequestAuditModal, requestAuditRecord?.request_id]);
 
   const copyValue = async (value) => {
     if (!value) {
@@ -81,6 +80,106 @@ const RequestAuditModal = ({
     }
     showError(t('复制失败'));
   };
+
+  const renderJsonViewer = (text, maxHeight) => (
+    <div
+      style={{
+        borderRadius: 8,
+        border: '1px solid var(--semi-color-border)',
+        overflow: 'hidden',
+      }}
+    >
+      <JsonViewer
+        value={text}
+        width='100%'
+        height={getJsonViewerHeight(text, maxHeight)}
+        showSearch
+        options={jsonViewerOptions}
+      />
+    </div>
+  );
+
+  const renderPlainText = (text, maxHeight) => (
+    <pre
+      style={{
+        margin: 0,
+        maxHeight,
+        overflow: 'auto',
+        padding: 12,
+        borderRadius: 8,
+        background: 'var(--semi-color-fill-0)',
+        border: '1px solid var(--semi-color-border)',
+        fontFamily:
+          'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, monospace',
+        fontSize: 12,
+        lineHeight: 1.6,
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-all',
+      }}
+    >
+      {text || t('空')}
+    </pre>
+  );
+
+  const renderBodyBlock = (maxHeight = 360) => (
+    <div style={{ marginTop: 12 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 4,
+          gap: 8,
+          flexWrap: 'wrap',
+        }}
+      >
+        <Text type='tertiary' size='small'>
+          {t('请求体')}
+        </Text>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {canStructureBody ? (
+            <RadioGroup
+              type='button'
+              size='small'
+              value={bodyViewMode}
+              onChange={(event) => setBodyViewMode(event.target.value)}
+            >
+              <Radio value='structured'>{t('结构化')}</Radio>
+              <Radio value='raw'>{t('原始 JSON')}</Radio>
+            </RadioGroup>
+          ) : null}
+          <Button
+            icon={<IconCopy />}
+            theme='borderless'
+            type='tertiary'
+            size='small'
+            onClick={() => copyValue(body.text)}
+            disabled={!body.text}
+          >
+            {t('复制')}
+          </Button>
+        </div>
+      </div>
+      {canStructureBody && bodyViewMode === 'structured' ? (
+        <div
+          style={{
+            borderRadius: 8,
+            border: '1px solid var(--semi-color-border)',
+            background: 'var(--semi-color-bg-1)',
+            padding: '10px 12px',
+            maxHeight,
+            overflow: 'auto',
+          }}
+        >
+          <StructuredRequestBody data={body.data} t={t} maxHeight={maxHeight - 24} />
+        </div>
+      ) : body.isJson ? (
+        renderJsonViewer(body.text, maxHeight)
+      ) : (
+        renderPlainText(body.text, maxHeight)
+      )}
+    </div>
+  );
 
   const renderCodeBlock = (label, { text, isJson }, maxHeight = 240) => (
     <div style={{ marginTop: 12 }}>
@@ -106,43 +205,7 @@ const RequestAuditModal = ({
           {t('复制')}
         </Button>
       </div>
-      {isJson ? (
-        <div
-          style={{
-            borderRadius: 8,
-            border: '1px solid var(--semi-color-border)',
-            overflow: 'hidden',
-          }}
-        >
-          <JsonViewer
-            value={text}
-            width='100%'
-            height={getJsonViewerHeight(text, maxHeight)}
-            showSearch
-            options={jsonViewerOptions}
-          />
-        </div>
-      ) : (
-        <pre
-          style={{
-            margin: 0,
-            maxHeight,
-            overflow: 'auto',
-            padding: 12,
-            borderRadius: 8,
-            background: 'var(--semi-color-fill-0)',
-            border: '1px solid var(--semi-color-border)',
-            fontFamily:
-              'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, monospace',
-            fontSize: 12,
-            lineHeight: 1.6,
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-all',
-          }}
-        >
-          {text || t('空')}
-        </pre>
-      )}
+      {isJson ? renderJsonViewer(text, maxHeight) : renderPlainText(text, maxHeight)}
     </div>
   );
 
@@ -211,7 +274,7 @@ const RequestAuditModal = ({
               />
             )}
 
-            {renderCodeBlock(t('请求体'), body, 280)}
+            {renderBodyBlock(360)}
             {renderCodeBlock(t('请求头'), headers, 180)}
           </div>
         ) : (
