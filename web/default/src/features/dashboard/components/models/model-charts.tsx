@@ -16,14 +16,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useEffect, useMemo, useState } from 'react'
 import { VChart } from '@visactor/react-vchart'
 import { PieChart as PieChartIcon } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useThemeRadiusPx } from '@/lib/theme-radius'
-import type { TimeGranularity } from '@/lib/time'
-import { VCHART_OPTION } from '@/lib/vchart'
-import { useChartTheme } from '@/lib/use-chart-theme'
+
+import { IconBadge } from '@/components/ui/icon-badge'
 import { useThemeCustomization } from '@/context/theme-customization-provider'
 import {
   DEFAULT_TIME_GRANULARITY,
@@ -34,6 +32,10 @@ import type {
   ModelAnalyticsChartTab,
   QuotaDataItem,
 } from '@/features/dashboard/types'
+import { useThemeRadiusPx } from '@/lib/theme-radius'
+import type { TimeGranularity } from '@/lib/time'
+import { useChartTheme } from '@/lib/use-chart-theme'
+import { VCHART_OPTION } from '@/lib/vchart'
 
 type ChartSpecKey = 'spec_model_line' | 'spec_pie' | 'spec_rank_bar'
 
@@ -93,7 +95,9 @@ export function ModelCharts(props: ModelChartsProps) {
     <div className='overflow-hidden rounded-lg border'>
       <div className='flex w-full flex-col gap-1.5 border-b px-3 py-2 sm:gap-3 sm:px-5 sm:py-3 lg:flex-row lg:items-center lg:justify-between'>
         <div className='flex items-center gap-2'>
-          <PieChartIcon className='text-muted-foreground/60 size-4' />
+          <IconBadge tone='chart-4' size='sm'>
+            <PieChartIcon />
+          </IconBadge>
           <div className='text-sm font-semibold'>
             {t('Model Call Analytics')}
           </div>

@@ -17,7 +17,7 @@ ENV npm_config_registry=https://registry.npmjs.org
 COPY web/package.json web/bun.lock ./
 COPY web/default/package.json ./default/package.json
 COPY web/classic/package.json ./classic/package.json
-RUN for i in 1 2 3; do bun install --frozen-lockfile && break || { rm -rf node_modules; sleep 5; }; done
+RUN for i in 1 2 3; do bun install --filter ./classic --frozen-lockfile && break || { rm -rf node_modules; sleep 5; }; done
 COPY ./web/classic ./classic
 COPY ./VERSION /build/VERSION
 RUN rm -rf node_modules/date-fns \
