@@ -61,13 +61,11 @@ export default defineConfig(({ envMode }) => {
       alias: {
         '@': path.resolve(__dirname, './src'),
       },
-      // Keep a single VRender/VChart runtime; duplicate copies break createCanvas().
-      dedupe: [
-        '@visactor/vchart',
-        '@visactor/react-vchart',
-        '@visactor/vrender-core',
-        '@visactor/vrender-kits',
-      ],
+      // Do not use resolve.dedupe for @visactor/* — it aliases via require.resolve
+      // (entry file) and breaks deep subpath imports like
+      // `@visactor/vrender-kits/register/register-glyph` and
+      // `@visactor/vrender-core/render/symbol`. Bun already hoists a single copy;
+      // browser env is registered once in src/lib/init-vchart.ts.
     },
     html: {
       template: './index.html',

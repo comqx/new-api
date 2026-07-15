@@ -20,8 +20,9 @@ COPY web/classic/package.json ./classic/package.json
 RUN for i in 1 2 3; do bun install --filter ./classic --frozen-lockfile && break || { rm -rf node_modules; sleep 5; }; done
 COPY ./web/classic ./classic
 COPY ./VERSION /build/VERSION
-RUN rm -rf node_modules/date-fns \
-    && cp -R node_modules/@douyinfe/semi-foundation/node_modules/date-fns node_modules/date-fns
+# `--filter ./classic` skips default's date-fns@4, so Semi's date-fns@2 can hoist
+# cleanly. Do not reintroduce the nested date-fns copy hack — Bun no longer
+# always nests it under @douyinfe/semi-foundation/node_modules.
 RUN cd classic && VITE_REACT_APP_VERSION=$(cat /build/VERSION) bun run build
 
 FROM golang:1.26.1-alpine@sha256:2389ebfa5b7f43eeafbd6be0c3700cc46690ef842ad962f6c5bd6be49ed82039 AS builder2
